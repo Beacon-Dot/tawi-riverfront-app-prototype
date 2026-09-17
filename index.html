@@ -1,0 +1,547 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Tawi Riverfront Explorer</title>
+
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Work+Sans:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+
+    <!-- Tailwind (utility helpers only, design system lives in styles.css) -->
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- Leaflet + OpenStreetMap tiles — free, no API key or account needed.
+         To switch to a keyed provider (e.g. Mapbox) instead, see the
+         MAPBOX_TOKEN setting near the top of app.js. -->
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css"
+    />
+    <script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js"></script>
+
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <!-- ============ HEADER ============ -->
+    <header class="site-header">
+      <div class="header-inner">
+        <a href="#top" class="brand">
+          <svg
+            width="30"
+            height="30"
+            viewBox="0 0 30 30"
+            fill="none"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <path
+              d="M2 20c3-3 5-3 8 0s5 3 8 0 5-3 8 0"
+              stroke="currentColor"
+              stroke-width="2.2"
+              stroke-linecap="round"
+            />
+            <path
+              d="M2 25c3-3 5-3 8 0s5 3 8 0 5-3 8 0"
+              stroke="currentColor"
+              stroke-width="2.2"
+              stroke-linecap="round"
+              opacity="0.55"
+            />
+            <path
+              d="M15 3v13"
+              stroke="currentColor"
+              stroke-width="2.2"
+              stroke-linecap="round"
+            />
+            <path
+              d="M9 8l6-5 6 5"
+              stroke="currentColor"
+              stroke-width="2.2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            />
+          </svg>
+          <span>Tawi Riverfront <em>Explorer</em></span>
+        </a>
+
+        <div class="header-search">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none">
+            <circle
+              cx="11"
+              cy="11"
+              r="7"
+              stroke="currentColor"
+              stroke-width="2"
+            />
+            <path
+              d="M21 21l-4.3-4.3"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+            />
+          </svg>
+          <input
+            id="searchInput"
+            type="text"
+            placeholder="Search a stall, dock or heritage site&hellip;"
+          />
+        </div>
+
+        <button class="menu-toggle" id="menuToggle" aria-label="Toggle filters">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+            <path
+              d="M4 7h16M4 12h16M4 17h10"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+            />
+          </svg>
+        </button>
+      </div>
+
+      <nav class="filter-bar" id="filterBar">
+        <button class="filter-chip is-active" data-filter="All">All</button>
+        <button class="filter-chip" data-filter="AR Views">AR Views</button>
+        <button class="filter-chip" data-filter="Boat Rides">Boat Rides</button>
+        <button class="filter-chip" data-filter="Local Eats">Local Eats</button>
+        <button class="filter-chip" data-filter="Cultural Stalls">
+          Cultural Stalls
+        </button>
+      </nav>
+    </header>
+
+    <!-- ============ HERO ============ -->
+    <section class="hero" id="top">
+      <div class="hero-inner">
+        <p class="hero-kicker">Jammu, on the banks of the Tawi</p>
+        <h1>An evening by the river,<br />guided by your phone.</h1>
+        <p class="hero-copy">
+          Walk the promenade, catch a boat, and hold your camera to a heritage
+          marker to watch the old ghats reappear &mdash; no app to install, no
+          queue to book.
+        </p>
+
+        <div class="status-strip" id="statusStrip">
+          <div class="status-item">
+            <span class="status-dot"></span>
+            <div>
+              <p class="status-label">Riverfront status</p>
+              <p class="status-value" id="statusOpen">Open</p>
+            </div>
+          </div>
+          <div class="status-divider"></div>
+          <div class="status-item">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+              <path
+                d="M3 16c2-2 4-2 6 0s4 2 6 0 4-2 6 0"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+              />
+              <path
+                d="M3 20c2-2 4-2 6 0s4 2 6 0 4-2 6 0"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                opacity=".5"
+              />
+              <path
+                d="M12 4v9"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+              />
+            </svg>
+            <div>
+              <p class="status-label">Water level</p>
+              <p class="status-value">Normal</p>
+            </div>
+          </div>
+          <div class="status-divider"></div>
+          <div class="status-item">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+              <path
+                d="M4 20V10l8-6 8 6v10"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linejoin="round"
+              />
+              <path
+                d="M9 20v-6h6v6"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linejoin="round"
+              />
+            </svg>
+            <div>
+              <p class="status-label">Active stalls</p>
+              <p class="status-value" id="activeStallCount">24</p>
+            </div>
+          </div>
+        </div>
+      </div>
+      <svg class="hero-wave" viewBox="0 0 1440 90" preserveAspectRatio="none">
+        <path
+          d="M0,40 C240,90 480,0 720,35 C960,70 1200,10 1440,45 L1440,90 L0,90 Z"
+        ></path>
+      </svg>
+    </section>
+
+    <main>
+      <!-- ============ MAP + LIST ============ -->
+      <section class="section" id="explore">
+        <div class="section-head">
+          <h2>Find your way along the ghats</h2>
+          <p>
+            Five points of interest, live on the map. Tap a pin or a row &mdash;
+            they're the same list.
+          </p>
+        </div>
+
+        <div class="explore-grid">
+          <div class="map-frame" id="mapFrame">
+            <div id="map"></div>
+            <p class="map-placement-banner" id="mapPlacementBanner">
+              Tap the map to drop your stall's pin
+            </p>
+          </div>
+
+          <div
+            class="poi-list"
+            id="poiList"
+            aria-label="Points of interest"
+          ></div>
+        </div>
+      </section>
+
+      <!-- ============ LIVE ENVIRONMENT ============ -->
+      <section class="section env-section" id="environment">
+        <div class="env-card">
+          <div class="env-primary">
+            <div class="env-icon" id="envIcon" aria-hidden="true">
+              <svg width="30" height="30" viewBox="0 0 24 24" fill="none">
+                <circle cx="12" cy="12" r="5" stroke="currentColor" stroke-width="2" />
+                <path
+                  d="M12 2v2.5M12 19.5V22M4.2 4.2l1.8 1.8M18 18l1.8 1.8M2 12h2.5M19.5 12H22M4.2 19.8L6 18M18 6l1.8-1.8"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                />
+              </svg>
+            </div>
+            <div>
+              <p class="env-temp">
+                <span id="temp">&hellip;</span><span class="env-unit">&deg;C</span>
+              </p>
+              <p class="env-condition" id="envCondition">Reading the riverfront sky</p>
+            </div>
+          </div>
+
+          <div class="env-divider"></div>
+
+          <div class="env-secondary">
+            <div class="env-stat">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+                <path
+                  d="M3 8h10a3 3 0 1 0-2.8-4M3 16h14a3 3 0 1 1-2.8 4M3 12h17a3 3 0 1 0-2.8-4"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                />
+              </svg>
+              <div>
+                <p class="env-stat-label">Wind</p>
+                <p class="env-stat-value"><span id="wind">&hellip;</span> km/h</p>
+              </div>
+            </div>
+            <div class="env-stat">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+                <circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="2" />
+                <path d="M12 7v5l3.5 2" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+              </svg>
+              <div>
+                <p class="env-stat-label">Updated</p>
+                <p class="env-stat-value" id="envUpdated">just now</p>
+              </div>
+            </div>
+          </div>
+        </div>
+        <p class="env-caption">
+          Pulled live from the riverfront's nearest weather station &mdash; no
+          key, no login, just the current sky over the ghats.
+        </p>
+      </section>
+
+      <!-- ============ AR GATEWAY ============ -->
+      <section class="section section-dark" id="ar">
+        <div class="section-head section-head-light">
+          <h2>See the riverfront as it was</h2>
+          <p>
+            Hold your phone up at any heritage marker along the promenade and
+            the old ghats, boats and stone stairways layer over the live view.
+          </p>
+        </div>
+
+        <div class="ar-gateway">
+          <button class="ar-card" id="arLaunch">
+            <div class="ar-card-visual">
+              <div class="ar-orbit"></div>
+              <svg width="34" height="34" viewBox="0 0 24 24" fill="none">
+                <path
+                  d="M12 3l2.3 4.7L19 9l-3.5 3.4L16.3 17 12 14.8 7.7 17l.8-4.6L5 9l4.7-1.3L12 3z"
+                  stroke="currentColor"
+                  stroke-width="1.6"
+                  stroke-linejoin="round"
+                />
+              </svg>
+            </div>
+            <div class="ar-card-body">
+              <p class="ar-card-eyebrow">
+                Heritage preview &middot; 1960s ghats
+              </p>
+              <h3>Launch the WebAR viewer</h3>
+              <p>
+                A 360&deg; panorama of the promenade before the flood walls
+                &mdash; drag to look around.
+              </p>
+            </div>
+            <span class="ar-card-cta">Open viewer &rsaquo;</span>
+          </button>
+
+          <ul class="ar-notes">
+            <li>
+              <strong>No install.</strong> Runs entirely in the browser, over a
+              QR code on-site.
+            </li>
+            <li>
+              <strong>Works offline-first.</strong> Panorama is cached after
+              first load for patchy riverside signal.
+            </li>
+            <li>
+              <strong>Five more markers</strong> are planned for the Handicrafts
+              Stall and the old bridge pier.
+            </li>
+          </ul>
+        </div>
+      </section>
+
+      <!-- ============ VENDOR FINDER ============ -->
+      <section class="section" id="vendors">
+        <div class="section-head">
+          <h2>Stalls open right now</h2>
+          <p>
+            Artisans and food carts update their own status &mdash; this list is
+            only as old as their last tap.
+          </p>
+        </div>
+
+        <div class="vendor-toolbar">
+          <div class="vendor-toggle" id="vendorToggle">
+            <button class="is-active" data-open="all">All stalls</button>
+            <button data-open="open">Open now</button>
+          </div>
+          <p class="vendor-count" id="vendorCount"></p>
+          <button class="vendor-register-btn" id="registerStallBtn" type="button">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none">
+              <path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" />
+            </svg>
+            Register your stall
+          </button>
+        </div>
+
+        <div class="vendor-list" id="vendorList"></div>
+
+        <div class="register-panel" id="registerPanel">
+          <div class="register-panel-inner">
+            <div class="register-panel-head">
+              <p class="modal-eyebrow">New stall</p>
+              <h3>Put your stall on the map</h3>
+              <p class="register-panel-hint" id="registerHint">
+                Click anywhere on the map above to drop your pin, then fill in
+                your details below.
+              </p>
+            </div>
+
+            <form id="vendorForm">
+              <label class="field-label" for="shopName">Shop name</label>
+              <input class="field-input" type="text" id="shopName" placeholder="e.g. Dogra Kulcha Corner" required />
+
+              <label class="field-label" for="stallType">Category</label>
+              <select class="field-select" id="stallType">
+                <option value="Local Eats">Local Eats</option>
+                <option value="Cultural Stalls">Cultural Stalls</option>
+              </select>
+
+              <div class="register-time-row">
+                <div>
+                  <label class="field-label" for="openTime">Opens</label>
+                  <input class="field-input" type="time" id="openTime" required />
+                </div>
+                <div>
+                  <label class="field-label" for="closeTime">Closes</label>
+                  <input class="field-input" type="time" id="closeTime" required />
+                </div>
+              </div>
+
+              <!-- Filled in automatically once you click the map -->
+              <input type="hidden" id="lat" />
+              <input type="hidden" id="lng" />
+
+              <div class="register-actions">
+                <button type="submit" class="btn-primary">Add my stall</button>
+                <button type="button" class="btn-secondary" id="registerCancel">Cancel</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <footer class="site-footer">
+      <p>
+        Tawi Riverfront Experience Platform &mdash; a hackathon prototype for
+        the Jammu riverfront promenade.
+      </p>
+      <p class="footer-sub">
+        Map data &copy; OpenStreetMap contributors &middot; QR generation via
+        goqr.me
+      </p>
+    </footer>
+
+    <!-- ============ TICKET MODAL ============ -->
+    <div class="modal-overlay" id="ticketModal">
+      <div
+        class="modal ticket-modal"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="ticketTitle"
+      >
+        <button class="modal-close" id="ticketClose" aria-label="Close">
+          &times;
+        </button>
+
+        <div id="ticketStepBook">
+          <p class="modal-eyebrow" id="ticketSiteName">Tawi Promenade</p>
+          <h3 id="ticketTitle">Reserve a time slot</h3>
+
+          <label class="field-label" for="activitySelect">Activity</label>
+          <select id="activitySelect" class="field-select"></select>
+
+          <label class="field-label">Time slot</label>
+          <div class="slot-grid" id="slotGrid"></div>
+
+          <label class="field-label" for="visitorName"
+            >Name on the ticket</label
+          >
+          <input
+            id="visitorName"
+            class="field-input"
+            type="text"
+            placeholder="e.g. Aanya Sharma"
+          />
+
+          <button class="btn-primary btn-block" id="generateTicket">
+            Generate digital ticket
+          </button>
+        </div>
+
+        <div id="ticketStepResult" class="hidden">
+          <p class="modal-eyebrow">Ticket confirmed</p>
+          <h3>You're booked</h3>
+          <div class="ticket-card">
+            <div class="ticket-card-main">
+              <p class="ticket-activity" id="resultActivity"></p>
+              <p class="ticket-meta" id="resultMeta"></p>
+              <p class="ticket-meta" id="resultName"></p>
+              <p class="ticket-id" id="resultId"></p>
+            </div>
+            <img
+              id="resultQr"
+              class="ticket-qr"
+              alt="Ticket QR code"
+              width="120"
+              height="120"
+            />
+          </div>
+          <p class="ticket-hint">
+            Show this QR code at the dock or stall entrance. This is a prototype
+            ticket &mdash; nothing has been charged.
+          </p>
+          <button class="btn-secondary btn-block" id="ticketAnother">
+            Book another slot
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============ AR MODAL ============ -->
+    <div class="modal-overlay" id="arModal">
+      <div
+        class="modal ar-modal"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="arModalTitle"
+      >
+        <button class="modal-close" id="arClose" aria-label="Close">
+          &times;
+        </button>
+        <p class="modal-eyebrow">WebAR heritage preview</p>
+        <h3 id="arModalTitle">The promenade, circa 1960</h3>
+        <div class="panorama-frame" id="panoramaFrame">
+          <div class="panorama-strip" id="panoramaStrip"></div>
+          <div class="panorama-hint">Drag to look around</div>
+        </div>
+        <p class="panorama-caption">
+          Simulated overlay for demo purposes &mdash; the production version
+          anchors this to camera feed via WebXR.
+        </p>
+
+        <!-- ============ READ HISTORY ============ -->
+        <div class="ar-history" id="arHistory">
+          <div class="ar-history-head">
+            <h4 id="arHistoryTitle">The promenade &amp; ghats</h4>
+            <button
+              class="ar-history-toggle"
+              id="arHistoryToggle"
+              type="button"
+              aria-expanded="false"
+              aria-controls="arHistoryTimelineWrap"
+            >
+              <span id="arHistoryToggleLabel">Read the full history</span>
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none">
+                <path
+                  d="M6 9l6 6 6-6"
+                  stroke="currentColor"
+                  stroke-width="2.4"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                />
+              </svg>
+            </button>
+          </div>
+
+          <p class="ar-history-intro" id="arHistoryIntro"></p>
+
+          <div class="ar-history-timeline" id="arHistoryTimelineWrap">
+            <div class="ar-history-timeline-inner">
+              <ul class="ar-history-list" id="arHistoryList"></ul>
+            </div>
+          </div>
+
+          <p class="ar-history-note">
+            Historical detail is placeholder copy for this prototype &mdash;
+            swap in verified archival research before launch.
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <script src="app.js"></script>
+  </body>
+</html>
